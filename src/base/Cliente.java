@@ -4,6 +4,8 @@ import java.awt.BorderLayout;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -12,6 +14,7 @@ import java.io.Serializable;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -29,18 +32,18 @@ import javax.swing.JComboBox;
 public class Cliente extends JFrame implements Runnable {
 
 	private JPanel contentPane;
-	private JTextField textFieldMensaje ;
+	private JTextField textFieldMensaje;
 	private int puerto;
 	private JTextArea textArea;
-	private JLabel label1,Nick,labelIP;
+	private JLabel label1, Nick, labelIP;
 	private JButton boton1;
 	private JLabel labelMostrarNick;
 	private JComboBox ip;
-	
+
 	public Cliente() {
 
-		String nick_usuario= JOptionPane.showInputDialog("Nick: ");
-		
+		String nick_usuario = JOptionPane.showInputDialog("Nick: ");
+
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 450, 400);
 		contentPane = new JPanel();
@@ -64,26 +67,19 @@ public class Cliente extends JFrame implements Runnable {
 		Nick = new JLabel("Nick: ");
 		Nick.setBounds(26, 22, 86, 20);
 		contentPane.add(Nick);
-		
 
 		boton1 = new JButton("Enviar");
 		boton1.setBounds(77, 311, 89, 23);
 		contentPane.add(boton1);
 
-		
 		labelIP = new JLabel("ONLINE: ");
-		labelIP.setBounds(200,22,80,21);
+		labelIP.setBounds(200, 22, 80, 21);
 		contentPane.add(labelIP);
-		
+
 		ip = new JComboBox();
 		ip.setBounds(254, 22, 86, 21);
-		ip.addItem("Usuario 1");
-		ip.addItem("Usuario 2");
-		ip.addItem("Usuario 3");
-
 		contentPane.add(ip);
-		
-		
+
 		labelMostrarNick = new JLabel();
 		labelMostrarNick.setText(nick_usuario);
 		labelMostrarNick.setBounds(64, 25, 46, 14);
@@ -93,16 +89,15 @@ public class Cliente extends JFrame implements Runnable {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				
-				
-				textArea.append("\n"+textFieldMensaje.getText());
+
+				textArea.append("\n" + textFieldMensaje.getText());
 				try {
-					Socket cliente = new Socket("192.168.0.7",9999);
+					Socket cliente = new Socket("192.168.0.7", 9999);
 
 					paqueteEnvio datos = new paqueteEnvio();
 
 					datos.setMensaje(textFieldMensaje.getText());
-					datos.setNick(Nick.getText());
+					datos.setNick(labelMostrarNick.getText());
 					datos.setIp(ip.getSelectedItem().toString());
 
 					ObjectOutputStream paqueteDatos = new ObjectOutputStream(cliente.getOutputStream());
@@ -119,13 +114,44 @@ public class Cliente extends JFrame implements Runnable {
 		});
 
 		setVisible(true);
+		addWindowListener(new envioOnline());
 		Thread hilo = new Thread(this);
 		hilo.start();
+	}
+
+	// ------envio de usuarios ONLINE ----------//
+	class envioOnline extends WindowAdapter {
+
+		public void windowOpened(WindowEvent e) {
+			try {
+				Socket miSocket = new Socket("192.168.0.7", 9999);
+
+				paqueteEnvio datos = new paqueteEnvio();
+				datos.setMensaje(" online");
+
+				ObjectOutputStream paqueteDatos = new ObjectOutputStream(miSocket.getOutputStream());
+				paqueteDatos.writeObject(datos);
+
+				miSocket.close();
+			} catch (Exception e2) {
+
+			}
+		}
 	}
 
 	class paqueteEnvio implements Serializable {
 
 		private String nick, mensaje, ip;
+
+		ArrayList<String> arrayClienteIP = new ArrayList<String>();
+
+		public ArrayList<String> getArrayClienteIP() {
+			return arrayClienteIP;
+		}
+
+		public void setArrayClienteIP(ArrayList<String> arrayClienteIP) {
+			this.arrayClienteIP = arrayClienteIP;
+		}
 
 		public String getIp() {
 			return ip;
@@ -173,7 +199,21 @@ public class Cliente extends JFrame implements Runnable {
 				ObjectInputStream flujoEntrada = new ObjectInputStream(cliente.getInputStream());
 				paqueteRecibido = (paqueteEnvio) flujoEntrada.readObject();
 
-				textArea.append("\n" + paqueteRecibido.getNick() + ": " + paqueteRecibido.getMensaje());
+				if (!paqueteRecibido.getMensaje().equals(" online")) {
+					textArea.append("\n" + paqueteRecibido.getNick() + ": " + paqueteRecibido.getMensaje());
+				} else {
+
+					// textArea.append("\n"+paqueteRecibido.getArrayClienteIP());
+					ArrayList<String> ipMenu = new ArrayList<String>();
+					ipMenu = paqueteRecibido.getArrayClienteIP();
+
+					ip.removeAllItems();
+					for (String i : ipMenu) {
+						ip.addItem(i);
+
+					}
+				}
+
 			}
 		} catch (Exception e) {
 			System.out.println(e.getMessage());

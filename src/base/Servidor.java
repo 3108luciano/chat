@@ -6,8 +6,10 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -23,8 +25,6 @@ public class Servidor extends JFrame implements Runnable {
 	private int puerto;
 
 	public Servidor() {
-
-		
 
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 350, 350);
@@ -46,28 +46,58 @@ public class Servidor extends JFrame implements Runnable {
 	public void run() {
 		String nick, mensaje, ip;
 		paqueteEnvio paqueteRecibido;
+		ArrayList<String> listaIP = new ArrayList<String>();
 
 		try {
 			ServerSocket servidor = new ServerSocket(9999);
 			System.out.println("SERVIDOR INICIADO");
 			while (true) {
 				Socket cliente = servidor.accept();
+
 				ObjectInputStream paqueteDatos = new ObjectInputStream(cliente.getInputStream());
 				paqueteRecibido = (paqueteEnvio) paqueteDatos.readObject();
 
 				nick = paqueteRecibido.getNick();
 				mensaje = paqueteRecibido.getMensaje();
 				ip = paqueteRecibido.getIp();
-				textArea1.append("\n" + nick + ": " + mensaje);
 
-				Socket enviaDestinatario = new Socket(ip,9090);
+				if (!mensaje.equals(" online")) {
+					textArea1.append("\n" + nick + ": " + mensaje);
 
-				ObjectOutputStream paqueteReenvio = new ObjectOutputStream(enviaDestinatario.getOutputStream());
-				paqueteReenvio.writeObject(paqueteRecibido);
+					Socket enviaDestinatario = new Socket(ip, 9090);
 
-				paqueteReenvio.close();
-				enviaDestinatario.close();
-				cliente.close();
+					ObjectOutputStream paqueteReenvio = new ObjectOutputStream(enviaDestinatario.getOutputStream());
+					paqueteReenvio.writeObject(paqueteRecibido);
+
+					paqueteReenvio.close();
+					enviaDestinatario.close();
+					cliente.close();
+				} else {
+					// -----------DETECTA USUARIOS ONLINE------------//
+
+					InetAddress localizacion = cliente.getInetAddress(); /* obtengo ip del cliente que se conecto */
+					String ipRemota = localizacion.getHostAddress(); /* almaceno la ip en un String */
+					System.out.println("ONLINE: " + ipRemota);
+
+					listaIP.add(ipRemota);
+
+					paqueteRecibido.setArrayClienteIP(listaIP);
+
+					for (String i : listaIP) {
+						System.out.println("arrayIP: " + i);
+
+						Socket enviaDestinatario = new Socket(i, 9090);
+
+						ObjectOutputStream paqueteReenvio = new ObjectOutputStream(enviaDestinatario.getOutputStream());
+						paqueteReenvio.writeObject(paqueteRecibido);
+
+						paqueteReenvio.close();
+						enviaDestinatario.close();
+						cliente.close();
+					}
+
+					// ----------------------------------------------//
+				}
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
