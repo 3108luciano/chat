@@ -22,9 +22,9 @@ public class Servidor extends JFrame implements Runnable {
 	private JTextArea textArea1;
 	private int puerto;
 
-	public Servidor(int puerto) {
+	public Servidor() {
 
-		this.puerto = puerto;
+		
 
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 350, 350);
@@ -44,11 +44,11 @@ public class Servidor extends JFrame implements Runnable {
 
 	@Override
 	public void run() {
-		String nick, mensaje;
+		String nick, mensaje, ip;
 		paqueteEnvio paqueteRecibido;
 
 		try {
-			ServerSocket servidor = new ServerSocket(puerto);
+			ServerSocket servidor = new ServerSocket(9999);
 			System.out.println("SERVIDOR INICIADO");
 			while (true) {
 				Socket cliente = servidor.accept();
@@ -57,7 +57,16 @@ public class Servidor extends JFrame implements Runnable {
 
 				nick = paqueteRecibido.getNick();
 				mensaje = paqueteRecibido.getMensaje();
-				textArea1.append("\n" + nick + " " + mensaje);
+				ip = paqueteRecibido.getIp();
+				textArea1.append("\n" + nick + ": " + mensaje+" para "+ip);
+
+				Socket enviaDestinatario = new Socket(ip,9090);
+
+				ObjectOutputStream paqueteReenvio = new ObjectOutputStream(enviaDestinatario.getOutputStream());
+				paqueteReenvio.writeObject(paqueteRecibido);
+
+				paqueteReenvio.close();
+				enviaDestinatario.close();
 				cliente.close();
 			}
 		} catch (IOException e) {
@@ -70,7 +79,7 @@ public class Servidor extends JFrame implements Runnable {
 	}
 
 	public static void main(String[] args) {
-		Servidor servidor = new Servidor(10000);
+		Servidor servidor = new Servidor();
 
 	}
 }
