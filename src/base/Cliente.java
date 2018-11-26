@@ -20,23 +20,27 @@ import javax.swing.border.EmptyBorder;
 import base.Cliente.paqueteEnvio;
 
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 
 public class Cliente extends JFrame implements Runnable {
 
 	private JPanel contentPane;
-	private JTextField textFieldMensaje, textfieldNick;
-	private String ip;
+	private JTextField textFieldMensaje ;
 	private int puerto;
 	private JTextArea textArea;
-	private JLabel label1;
+	private JLabel label1,Nick,labelIP;
 	private JButton boton1;
-	private JTextField textFieldIP;
-
+	private JLabel labelMostrarNick;
+	private JComboBox ip;
+	
 	public Cliente() {
 
+		String nick_usuario= JOptionPane.showInputDialog("Nick: ");
+		
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 450, 400);
 		contentPane = new JPanel();
@@ -57,32 +61,49 @@ public class Cliente extends JFrame implements Runnable {
 		contentPane.add(textFieldMensaje);
 		textFieldMensaje.setColumns(10);
 
-		textfieldNick = new JTextField();
-		textfieldNick.setBounds(46, 22, 86, 20);
-		contentPane.add(textfieldNick);
-		textfieldNick.setColumns(10);
+		Nick = new JLabel("Nick: ");
+		Nick.setBounds(26, 22, 86, 20);
+		contentPane.add(Nick);
+		
 
 		boton1 = new JButton("Enviar");
 		boton1.setBounds(77, 311, 89, 23);
 		contentPane.add(boton1);
 
-		textFieldIP = new JTextField();
-		textFieldIP.setBounds(254, 22, 86, 21);
-		contentPane.add(textFieldIP);
-		textFieldIP.setColumns(10);
+		
+		labelIP = new JLabel("ONLINE: ");
+		labelIP.setBounds(200,22,80,21);
+		contentPane.add(labelIP);
+		
+		ip = new JComboBox();
+		ip.setBounds(254, 22, 86, 21);
+		ip.addItem("Usuario 1");
+		ip.addItem("Usuario 2");
+		ip.addItem("Usuario 3");
+
+		contentPane.add(ip);
+		
+		
+		labelMostrarNick = new JLabel();
+		labelMostrarNick.setText(nick_usuario);
+		labelMostrarNick.setBounds(64, 25, 46, 14);
+		contentPane.add(labelMostrarNick);
 
 		boton1.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				
+				
+				textArea.append("\n"+textFieldMensaje.getText());
 				try {
-					Socket cliente = new Socket("192.168.31.104", 9999);
+					Socket cliente = new Socket("192.168.0.7",9999);
 
 					paqueteEnvio datos = new paqueteEnvio();
 
 					datos.setMensaje(textFieldMensaje.getText());
-					datos.setNick(textfieldNick.getText());
-					datos.setIp(textFieldIP.getText());
+					datos.setNick(Nick.getText());
+					datos.setIp(ip.getSelectedItem().toString());
 
 					ObjectOutputStream paqueteDatos = new ObjectOutputStream(cliente.getOutputStream());
 					paqueteDatos.writeObject(datos);

@@ -58,7 +58,7 @@ public class Servidor extends JFrame implements Runnable {
 				nick = paqueteRecibido.getNick();
 				mensaje = paqueteRecibido.getMensaje();
 				ip = paqueteRecibido.getIp();
-				textArea1.append("\n" + nick + ": " + mensaje+" para "+ip);
+				textArea1.append("\n" + nick + ": " + mensaje);
 
 				Socket enviaDestinatario = new Socket(ip,9090);
 
